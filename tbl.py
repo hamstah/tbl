@@ -193,13 +193,14 @@ class TblLoader:
             return tables[0:-1]
         return tables
 
-tables = []
-if len(sys.argv) == 1:
-    tables = TblLoader.load(sys.stdin)
-else:
-    for f in sys.argv[1:]:
-        tables += TblLoader.load(open(f))
+if __name__ == "__main__":
+    tables = []
+    if len(sys.argv) == 1:
+        tables = TblLoader.load(sys.stdin)
+    else:
+        for f in sys.argv[1:]:
+            tables += TblLoader.load(open(f))
 
-for table in tables:
-    table.output()
-    print
+    for table in tables:
+        table.output()
+        print
