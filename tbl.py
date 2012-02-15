@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 import re
+import sys
 
 class Format:
     Title = 0
@@ -140,7 +142,8 @@ class Tbl:
                 self.separators.add(1)
             if Format.Title in self.header_format:
                 for i in range(len(rows[0])):
-                    rows[0][i] = rows[0][i].title()
+                    if isinstance(rows[0][i],str):
+                        rows[0][i] = rows[0][i].title()
         else:
             rows = self.sort_rows(self.rows)
 
@@ -176,9 +179,8 @@ class Tbl:
 class TblLoader:
 
     @staticmethod
-    def load(filename):
+    def load(f):
         tables = [Tbl()]
-        f = open(filename)
         for line in f.readlines():
             line = line.strip()
             if len(line) == 0:
@@ -191,7 +193,13 @@ class TblLoader:
             return tables[0:-1]
         return tables
 
-tables = TblLoader.load("data.tbl")
+tables = []
+if len(sys.argv) == 1:
+    tables = TblLoader.load(sys.stdin)
+else:
+    for f in sys.argv[1:]:
+        tables += TblLoader.load(open(f))
+
 for table in tables:
     table.output()
     print
