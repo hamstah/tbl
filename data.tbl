@@ -1,0 +1,19 @@
+type, time, compiler
+--
+static, 06:50, gcc
+shared, 07:40, gcc
+--
+static, 03:40, clang
+shared, 02:10, clang
+
+@width 10 ,12, 8
+@precision 3
+@sort 1, 0, 2
+blah,test,rr
+--
+aaa, 333, 000
+aaa, 111, 999
+ccc, 222, 333
+bbb, 000, 222
+aaa, 000, 222
+bbb, 000, 111
