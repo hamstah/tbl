@@ -1,19 +1,85 @@
-type, time, compiler
+#
+#Sort
+#
 --
-static, 06:50, gcc
-shared, 07:40, gcc
---
-static, 03:40, clang
-shared, 02:10, clang
-
 @width 10 ,12, 8
 @precision 3
 @sort 1, 0, 2
+--
 blah,test,rr
 --
 aaa, 333, 000
 aaa, 111, 999
 ccc, 222, 333
+# stays attached to the right row
+--
 bbb, 000, 222
 aaa, 000, 222
 bbb, 000, 111
+
+#
+#Missing column text
+#
+--
+test1, test2
+a,b,c
+d,e,f
+
+#
+#Matrix
+#
+--
+@layout matrix
+a,b,c
+d,e,f
+g,h,i
+
+#
+#Empty
+#
+--
+@layout empty
+a,b,c
+d,e,f
+g,h,i
+
+#
+#Clean build
+#
+--
+build system, compiler, cache, threads, linking, pch, time, size
+Ninja , gcc 4.4 , Cold , 12 , static , no , 05:07 , 4.7G 
+# **
+Ninja , gcc 4.4 , 1 run , 12 , static , no , 05:00 , 4.7G 
+Make , gcc 4.4 , Cold , 12 , static , no , 05:20 , 4.8G 
+Make , gcc 4.4 , 1 run , 12 , static , no , 05:07 , 4.8G 
+--
+Ninja , gcc 4.4 , Cold , 12 , shared , no , 05:03 , 3.7G 
+# **
+# best overall
+Ninja , gcc 4.4 , 1 run , 12 , shared , no , 04:53 , 3.7G 
+Make , gcc 4.4 , Cold , 12 , shared , no , 05:11 , 3.8G 
+Make , gcc 4.4 , 1 run , 12 , shared , no , 05:02 , 3.8G 
+--
+Ninja , clang 3.1 , Cold , 12 , static , no , xx:xx , x.xG 
+Ninja , clang 3.1 , 1 run , 12 , static , no , xx:xx , x.xG 
+Make , clang 3.1 , Cold , 12 , static , no , xx:xx , x.xG 
+Make , clang 3.1 , 1 run , 12 , static , no , xx:xx , x.xG 
+--
+Ninja , clang 3.1 , Cold , 12 , shared , no , xx:xx , x.xG 
+Ninja , clang 3.1 , 1 run , 12 , shared , no , xx:xx , x.xG 
+Make , clang 3.1 , Cold , 12 , shared , no , xx:xx , x.xG 
+Make , clang 3.1 , 1 run , 12 , shared , no , xx:xx , x.xG 
+
+#
+#Incremental
+#
+--
+Build system , Compiler , Threads , Linking , PCH , Time , Target 
+# **
+Ninja , gcc 4.4 , 12 , static , no , 00:42 , all 
+Make , gcc 4.4 , 12 , static , no , 00:44 , all 
+--
+# **
+Ninja , gcc 4.4 , 12 , static , no , 00:12 , client 
+Make , gcc 4.4 , 12 , static , no , 00:09 , client 

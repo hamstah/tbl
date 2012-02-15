@@ -1,5 +1,21 @@
 import re
 
+class Format:
+    Title = 0
+    Centered = 1   
+
+    valid_formats = {"title":Title}
+
+class Layout:
+    Header = 0
+    Empty = 1
+    Matrix = 2
+
+    valid_layouts = {"header":Header, "empty":Empty, "matrix":Matrix}
+
+class Row(list):
+    pass
+
 class Tbl:
 
     def __init__(self):
@@ -11,19 +27,20 @@ class Tbl:
         self.width = []
         self.precision = 4
         self.sort = None
-        self.separators = []
+        self.separators = set()
+        self.layout = Layout.Header
+        self.header_format = set([Format.Title])
+        self.queued_comments = []
+        self.extras = {"before":[]}
 
     # true if the row is actual data
     def is_data(self, row):
-        return not (isinstance(row,str) and (row == "--" or row.startswith("@")))
+        return not (isinstance(row,str) and (row == "--" or row.startswith("@") or row.startswith("#")))
 
     def add_row(self, row):
 
         # cleans and stores data rows
         if self.is_data(row):
-            if not self.has_data:
-                row = row.title()
-
             row = [c.strip() for c in row.split(",")]
             self.max_columns = max(self.max_columns, len(row))
 
@@ -41,14 +58,29 @@ class Tbl:
                 elif re.match(reg_float, row[i]):
                     row[i] = round(float(row[i]),self.precision)
 
-            self.rows.append(row)
+            nr = Row(row)
+            nr.comments = self.queued_comments
+            self.queued_comments = []
+
+            self.rows.append(nr)
             self.has_data = True
 
         # separators
         elif row == "--":
-            self.separators.append(len(self.rows))
-
-        #p parameters
+            if not self.has_data and len(self.queued_comments):
+                self.extras["before"] += self.queued_comments
+                self.queued_comments = []
+            else:
+                self.separators.add(len(self.rows))
+        # comments
+        elif row.startswith("#"):
+            if len(row) == 1:
+                self.queued_comments.append("")
+            else:
+                self.queued_comments.append(row[1:])
+            return
+            
+        # parameters
         elif not self.has_data:
             try:
                 if row.startswith("@width"):
@@ -64,6 +96,11 @@ class Tbl:
                     r[0] = r[0][6:]
                     self.sort = {"order":[int(x) for x in r],
                                  "reverse":row.startswith("@rsort")}
+                elif row.startswith("@layout "):
+                    r = row[8:]
+                    if r in Layout.valid_layouts:
+                        self.layout = Layout.valid_layouts[r]
+
             except Exception as e:
                 pass
         
@@ -94,18 +131,38 @@ class Tbl:
         if self.format == "" or self.separator == "":
             (self.separator, self.format) = self.generate_sep_format(self.width)
             
-        rows = [self.rows[0]]+self.sort_rows(self.rows[1:])
+        rows = []
 
-        print self.separator
+        if self.layout == Layout.Header:
+            rows = [self.rows[0]]+self.sort_rows(self.rows[1:])
+
+            if 1 not in self.separators:
+                self.separators.add(1)
+            if Format.Title in self.header_format:
+                for i in range(len(rows[0])):
+                    rows[0][i] = rows[0][i].title()
+        else:
+            rows = self.sort_rows(self.rows)
+
+        if self.layout == Layout.Matrix:
+            self.separators = set(range(1,len(rows)))
+        
+        for line in self.extras["before"]:
+            print line
+
+        if 0 not in self.separators:
+            print self.separator
         for i in range(len(self.rows)):
             if i in self.separators:
                 print self.separator
+            print self.format_row(rows[i])+"".join(rows[i].comments)
+        print self.separator        
 
-            p = ["",]*self.max_columns
-            p[0:len(rows[i])] = rows[i]
-            print self.format%(tuple(p))
 
-        print self.separator
+    def format_row(self, row):
+        p = ["",]*self.max_columns
+        p[0:len(row)] = row
+        return self.format%(tuple(p))
 
     # generate separator and format str
     def generate_sep_format(self,width):
