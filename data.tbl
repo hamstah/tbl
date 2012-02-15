@@ -4,7 +4,7 @@
 --
 @width 10 ,12, 8
 @precision 3
-@sort 1, 0, 2
+@sort 1, 0
 --
 blah,test,rr
 --
@@ -83,3 +83,14 @@ Make , gcc 4.4 , 12 , static , no , 00:44 , all
 # **
 Ninja , gcc 4.4 , 12 , static , no , 00:12 , client 
 Make , gcc 4.4 , 12 , static , no , 00:09 , client 
+
+
+#
+#Messy
+#
+--
+abc, def
+1
+1,2,3
+4,5
+1,2,3,6,5

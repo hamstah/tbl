@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import re
 import sys
+from optparse import OptionParser
 
 class Format:
     Title = 0
@@ -20,7 +21,9 @@ class Row(list):
 
 class Tbl:
 
-    def __init__(self):
+    default_splitter = ","
+
+    def __init__(self,parameters = {}):
         self.rows = []
         self.max_columns = 0
         self.has_data=False
@@ -34,16 +37,35 @@ class Tbl:
         self.header_format = set([Format.Title])
         self.queued_comments = []
         self.extras = {"before":[]}
+        self.parameters = parameters
+        self.is_splitter_regex = False
+
+        if self.parameters.regex_splitter:
+            self.splitter = re.compile(self.parameters.regex_splitter)
+            self.is_splitter_regex = True
+        elif self.parameters.splitter:
+            self.splitter = self.parameters.splitter
+        else:
+            self.splitter = self.default_splitter
+        
+            
 
     # true if the row is actual data
     def is_data(self, row):
         return not (isinstance(row,str) and (row == "--" or row.startswith("@") or row.startswith("#")))
 
+    def split_data(self, row):
+        if self.is_splitter_regex:
+            return [c.strip() for c in re.split(self.splitter, row)]
+        else:
+            return [c.strip() for c in row.split(self.splitter)]
+
     def add_row(self, row):
 
         # cleans and stores data rows
         if self.is_data(row):
-            row = [c.strip() for c in row.split(",")]
+            row = self.split_data(row)
+
             self.max_columns = max(self.max_columns, len(row))
 
             missing  = self.max_columns - len(self.width)
@@ -113,17 +135,19 @@ class Tbl:
         return self.max_columns
 
     def sortfn(self):
-        return lambda x : tuple([x[o] for o in self.sort["order"]])
+        return lambda x : tuple([(x[o] if len(x)>o else "" )for o in self.sort["order"]])
 
     def sort_rows(self, rows):
         if self.sort == None:
             return rows
-        if len(self.sort["order"]) == 0 or len(self.sort["order"]) > self.max_columns:
+        print self.sort["order"]
+
+        if len(self.sort["order"]) == 0 or len(self.sort["order"]) >= self.max_columns:
             return rows
+
         for s in self.sort["order"]:
             if s >= self.max_columns or s < 0:
                 return rows
-
         return sorted(rows, key=self.sortfn(), reverse=self.sort["reverse"]) 
 
     def output(self):
@@ -179,13 +203,13 @@ class Tbl:
 class TblLoader:
 
     @staticmethod
-    def load(f):
-        tables = [Tbl()]
+    def load(f, parameters):
+        tables = [Tbl(parameters)]
         for line in f.readlines():
             line = line.strip()
             if len(line) == 0:
                 if tables[-1].rows_count() != 0:
-                    tables.append(Tbl())
+                    tables.append(Tbl(parameters))
                 continue
             tables[-1].add_row(line)
             
@@ -195,11 +219,24 @@ class TblLoader:
 
 if __name__ == "__main__":
     tables = []
-    if len(sys.argv) == 1:
-        tables = TblLoader.load(sys.stdin)
+
+    parser = OptionParser()
+    parser.add_option("-s", "--splitter",dest="splitter",
+                      help="Fields splitter")
+    parser.add_option("-r","--regex-splitter",dest="regex_splitter", help="Regex to separate fields")
+    
+
+    (options, args) = parser.parse_args()
+
+    if options.splitter and options.regex_splitter:
+        parser.error("-s and -r are mutually exclusive")
+    
+
+    if len(args) == 0:
+        tables = TblLoader.load(sys.stdin,options)
     else:
-        for f in sys.argv[1:]:
-            tables += TblLoader.load(open(f))
+        for f in args:
+            tables += TblLoader.load(open(f),options)
 
     for table in tables:
         table.output()
