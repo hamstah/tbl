@@ -39,6 +39,7 @@ class Tbl:
         self.extras = {"before":[]}
         self.parameters = parameters
         self.is_splitter_regex = False
+        self.group = []
 
         if self.parameters.regex_splitter:
             self.splitter = re.compile(self.parameters.regex_splitter)
@@ -124,8 +125,13 @@ class Tbl:
                     r = row[8:]
                     if r in Layout.valid_layouts:
                         self.layout = Layout.valid_layouts[r]
+                elif row.startswith("@group"):
+                    r = row.split(",")
+                    r[0] = r[0][6:]
+                    self.group = [int(x) for x in r]
 
             except Exception as e:
+                print e
                 pass
         
     def rows_count(self):
@@ -140,7 +146,6 @@ class Tbl:
     def sort_rows(self, rows):
         if self.sort == None:
             return rows
-        print self.sort["order"]
 
         if len(self.sort["order"]) == 0 or len(self.sort["order"]) >= self.max_columns:
             return rows
@@ -179,10 +184,24 @@ class Tbl:
 
         if 0 not in self.separators:
             print self.separator
+
+        for g in self.group:
+            if g >= self.max_columns or g < 0:
+                self.group = []
+                break
+        lastrow=None
+
         for i in range(len(self.rows)):
             if i in self.separators:
                 print self.separator
+            elif len(self.group) > 0 and lastrow != None:
+                for g in self.group:
+                    if lastrow[g] != rows[i][g]:
+                        print self.separator
+                        break
+
             print self.format_row(rows[i])+"".join(rows[i].comments)
+            lastrow = rows[i]
         print self.separator        
 
 
