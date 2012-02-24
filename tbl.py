@@ -39,7 +39,10 @@ class Tbl:
         self.extras = {"before":[]}
         self.parameters = parameters
         self.is_splitter_regex = False
-        self.group = []
+        try:
+            self.group = [int(x) for x in parameters.group.split(",")]
+        except:
+            self.group = []
 
         if self.parameters.regex_splitter:
             self.splitter = re.compile(self.parameters.regex_splitter)
@@ -49,8 +52,18 @@ class Tbl:
         else:
             self.splitter = self.default_splitter
         
-            
-
+    def parse_parameter(self, row, option, split=None, fn=None):
+        if not row.startswith(option+" "):
+            return None
+        value = row[len(option)+1:]
+        if split:
+            value = value.split(split)
+            if fn:
+                return [fn(x) for x in value]
+        if fn:
+            return fn(value)
+        return value
+        
     # true if the row is actual data
     def is_data(self, row):
         return not (isinstance(row,str) and (row == "--" or row.startswith("@") or row.startswith("#")))
@@ -60,6 +73,9 @@ class Tbl:
             return [c.strip() for c in re.split(self.splitter, row)]
         else:
             return [c.strip() for c in row.split(self.splitter)]
+    def trunc(self,num, digits):
+        sp = str(num).split('.')
+        return  '.'.join([sp[0], sp[1][:digits]])
 
     def add_row(self, row):
 
@@ -81,7 +97,7 @@ class Tbl:
                 if re.match(reg_int, row[i]):
                     row[i] = int(row[i])
                 elif re.match(reg_float, row[i]):
-                    row[i] = round(float(row[i]),self.precision)
+                    row[i] = self.trunc(row[i],self.precision)
 
             nr = Row(row)
             nr.comments = self.queued_comments
@@ -109,26 +125,26 @@ class Tbl:
         elif not self.has_data:
             try:
                 if row.startswith("@width"):
-                    r = row.split(",")
-                    r[0] = r[0][6:]
-                    self.width = [int(x) for x in r]
+                    self.width = self.parse_parameter(row,"@width",split=",",fn=int)
+
                 elif row.startswith("@precision"):
-                    r = row.split(" ")
-                    if len(r) == 2:
-                        self.precision = int(r[1])
-                elif row.startswith("@sort ") or row.startswith("@rsort "):
-                    r = row.split(",")
-                    r[0] = r[0][6:]
-                    self.sort = {"order":[int(x) for x in r],
-                                 "reverse":row.startswith("@rsort")}
+                    self.precision = int(self.parse_parameter(row,"@precision"))
+
+                elif row.startswith("@sort"):
+                    col = self.parse_parameter(row,"@sort",split=",",fn=int)
+                    reverse = col[0]<0
+                    if reverse:
+                        col[0] = -col[0]
+                    self.sort = {"order":col,
+                                 "reverse":reverse}
+
                 elif row.startswith("@layout "):
-                    r = row[8:]
-                    if r in Layout.valid_layouts:
-                        self.layout = Layout.valid_layouts[r]
+                    layout = self.parse_parameter(row,"@layout")
+                    if layout in Layout.valid_layouts:
+                        self.layout = Layout.valid_layouts[layout]
+
                 elif row.startswith("@group"):
-                    r = row.split(",")
-                    r[0] = r[0][6:]
-                    self.group = [int(x) for x in r]
+                    self.group = self.parse_parameter(row,"@group",split=",",fn=int)
 
             except Exception as e:
                 print e
@@ -244,6 +260,7 @@ if __name__ == "__main__":
                       help="Fields splitter")
     parser.add_option("-r","--regex-splitter",dest="regex_splitter", help="Regex to separate fields")
     
+    parser.add_option("-g","--group-by",dest="group", help="Group rows by identical column values.")
 
     (options, args) = parser.parse_args()
 

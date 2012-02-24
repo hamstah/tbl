@@ -1,21 +1,41 @@
 #
-#Sort
+#Sort, with, precision
 #
 --
-@width 10 ,12, 8
-@precision 3
+@width 4 ,3, 10
+@precision 1
 @sort 1, 0
 --
 blah,test,rr
 --
+aaa, 333, 0.00
+aaa, 111, 9.99
+ccc, 222, 3.33
+# stays attached to the right row
+--
+bbb, 000, 2.22
+aaa, 000, 2.22
+bbb, 000, 1.23
+
+#
+#reverse Sort, width, precision
+#
+--
+@width 10 ,12, 8
+@precision 2
+@sort -1, 0
+--
+blah,test,rr
+--
 aaa, 333, 000
-aaa, 111, 999
+aaa, 111, 1.235
 ccc, 222, 333
 # stays attached to the right row
 --
 bbb, 000, 222
 aaa, 000, 222
 bbb, 000, 111
+
 
 #
 #Missing column text
