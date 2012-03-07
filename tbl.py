@@ -39,10 +39,18 @@ class Tbl:
         self.extras = {"before":[]}
         self.parameters = parameters
         self.is_splitter_regex = False
+        self.strings = []           
+
         try:
             self.group = [int(x) for x in parameters.group.split(",")]
         except:
             self.group = []
+
+        try:
+            self.sort = {"order":[int(x) for x in parameters.sort.split(",")], "reverse":False}
+        except Exception as e:
+            print e
+            self.sort = None
 
         if self.parameters.regex_splitter:
             self.splitter = re.compile(self.parameters.regex_splitter)
@@ -51,6 +59,12 @@ class Tbl:
             self.splitter = self.parameters.splitter
         else:
             self.splitter = self.default_splitter
+
+        self.reg_int = re.compile("^[0-9]+$")
+        self.reg_float = re.compile("^[0-9]+\.[0-9]*$")
+
+        if parameters.header != None:
+            self.add_row(parameters.header)
         
     def parse_parameter(self, row, option, split=None, fn=None):
         if not row.startswith(option+" "):
@@ -85,19 +99,19 @@ class Tbl:
 
             self.max_columns = max(self.max_columns, len(row))
 
-            missing  = self.max_columns - len(self.width)
+            missing = self.max_columns - len(self.width)
             if missing > 0:
                 self.width += [0]*missing
-
-            reg_int = re.compile("^[0-9]+$")
-            reg_float = re.compile("^[0-9]+\.[0-9]*$")
-
+                self.strings += [0]*missing
+                
             for i in range(0,len(row)):
                 self.width[i] = max(self.width[i], len("%s"%(row[i])))
-                if re.match(reg_int, row[i]):
+                if re.match(self.reg_int, row[i]):
                     row[i] = int(row[i])
-                elif re.match(reg_float, row[i]):
+                elif re.match(self.reg_float, row[i]):
                     row[i] = self.trunc(row[i],self.precision)
+                else:
+                    self.strings[i] += 1
 
             nr = Row(row)
             nr.comments = self.queued_comments
@@ -231,7 +245,11 @@ class Tbl:
         format = "|"
         sep = "+"
         for c in range(0,self.max_columns):
-            format += " %%%ds |"%(width[c])
+            if self.strings[c] > len(self.rows)/3:              
+                format += " %%-%ds |"%(width[c])
+            else:
+                format += " %%%ds |"%(width[c])
+
             sep += "-"*(width[c]+2)+"+"
         return (sep,format)
 
@@ -256,11 +274,13 @@ if __name__ == "__main__":
     tables = []
 
     parser = OptionParser()
-    parser.add_option("-s", "--splitter",dest="splitter",
+    parser.add_option("-t", "--splitter",dest="splitter",
                       help="Fields splitter")
     parser.add_option("-r","--regex-splitter",dest="regex_splitter", help="Regex to separate fields")
     
     parser.add_option("-g","--group-by",dest="group", help="Group rows by identical column values.")
+    parser.add_option("-s","--sort",dest="sort",help="Sorting order.")
+    parser.add_option("-d","--header",dest="header",help="Header text.")
 
     (options, args) = parser.parse_args()
 
@@ -273,6 +293,7 @@ if __name__ == "__main__":
     else:
         for f in args:
             tables += TblLoader.load(open(f),options)
+            options.header = None
 
     for table in tables:
         table.output()
