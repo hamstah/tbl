@@ -49,7 +49,6 @@ class Tbl:
         try:
             self.sort = {"order":[int(x) for x in parameters.sort.split(",")], "reverse":False}
         except Exception as e:
-            print e
             self.sort = None
 
         if self.parameters.regex_splitter:
