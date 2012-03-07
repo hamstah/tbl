@@ -270,30 +270,36 @@ class TblLoader:
         return tables
 
 if __name__ == "__main__":
-    tables = []
 
-    parser = OptionParser()
-    parser.add_option("-t", "--splitter",dest="splitter",
-                      help="Fields splitter")
-    parser.add_option("-r","--regex-splitter",dest="regex_splitter", help="Regex to separate fields")
-    
-    parser.add_option("-g","--group-by",dest="group", help="Group rows by identical column values.")
-    parser.add_option("-s","--sort",dest="sort",help="Sorting order.")
-    parser.add_option("-d","--header",dest="header",help="Header text.")
+    try:
 
-    (options, args) = parser.parse_args()
+        tables = []
 
-    if options.splitter and options.regex_splitter:
-        parser.error("-s and -r are mutually exclusive")
-    
+        parser = OptionParser()
+        parser.add_option("-t", "--splitter",dest="splitter",
+                          help="Fields splitter")
+        parser.add_option("-r","--regex-splitter",dest="regex_splitter", help="Regex to separate fields")
 
-    if len(args) == 0:
-        tables = TblLoader.load(sys.stdin,options)
-    else:
-        for f in args:
-            tables += TblLoader.load(open(f),options)
-            options.header = None
+        parser.add_option("-g","--group-by",dest="group", help="Group rows by identical column values.")
+        parser.add_option("-s","--sort",dest="sort",help="Sorting order.")
+        parser.add_option("-d","--header",dest="header",help="Header text.")
 
-    for table in tables:
-        table.output()
-        print
+        (options, args) = parser.parse_args()
+
+        if options.splitter and options.regex_splitter:
+            parser.error("-s and -r are mutually exclusive")
+
+
+        if len(args) == 0:
+            tables = TblLoader.load(sys.stdin,options)
+        else:
+            for f in args:
+                tables += TblLoader.load(open(f),options)
+                options.header = None
+
+        for table in tables:
+            table.output()
+            print
+    except KeyboardInterrupt:
+        print ""
+
