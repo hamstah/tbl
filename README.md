@@ -108,3 +108,13 @@ $ echo -e "#\n#/etc/passwd\n#\n--\nLogin: passwd: uid: gid: info: home: shell" |
 
 
 ```
+
+Emacs
+
+```elisp
+(defun tbl()
+  "run tbl.py on the current buffer"
+  (interactive)
+  (shell-command-on-region (point-min) (point-max) "tbl.py" "tbl")
+)
+```

@@ -103,6 +103,9 @@ class Tbl:
                 self.width += [0]*missing
                 self.strings += [0]*missing
                 
+            for i in range(len(row)+1, self.max_columns):
+                self.strings[i] += 1
+
             for i in range(0,len(row)):
                 self.width[i] = max(self.width[i], len("%s"%(row[i])))
                 if re.match(self.reg_int, row[i]):
