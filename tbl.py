@@ -101,6 +101,9 @@ class Tbl:
             missing = self.max_columns - len(self.width)
             if missing > 0:
                 self.width += [0]*missing
+
+            missing = self.max_columns - len(self.strings)
+            if missing > 0:
                 self.strings += [0]*missing
                 
             for i in range(len(row)+1, self.max_columns):
