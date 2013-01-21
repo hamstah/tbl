@@ -231,7 +231,16 @@ class Tbl:
                 print self.separator
             elif len(self.group) > 0 and lastrow != None:
                 for g in self.group:
-                    if lastrow[g] != rows[i][g]:
+                    
+                    previousValue = None
+                    if len(lastrow) > g:
+                        previousValue = lastrow[g]
+                    
+                    currentValue = None
+                    if len(rows[i]) > g:
+                        currentValue = rows[i][g]
+
+                    if currentValue != previousValue:
                         print self.separator
                         break
 
